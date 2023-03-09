@@ -1,0 +1,124 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class player : MonoBehaviour
+{
+    public float speed; // variavel da velocidade do movimento 
+    public float JumpForce; //variavel que controle a forca do pulo
+
+    private Rigidbody2D rig; // variavel que controla as fisicas do corpo
+
+    public bool isJumping; // se está pulando, nao pula de novo.
+
+    private float timer = 0f; // contador
+
+    private bool isMoving = false; // se esta se movendo
+
+    public bool isIdle1 = true; // começa com o idle 1 e alterna para 2 
+    public bool isIdle2 = false;// idle 2 começa falso
+
+    private Animator animacao; //classe adicionada a variavel que chama a animacao descrita ("")
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        animacao = GetComponent<Animator>(); //a variavel animacao pega o componente da classe Animator
+        rig = GetComponent<Rigidbody2D>();// variavel que pega o componente da classe do rigidbody2d
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        Move(); // confere o tempo todo as teclas de movimento
+        Jump(); // confere o tempo todo as teclas de salto
+
+        if (!isMoving) // se nao esta se mexendo
+        {
+            timer += Time.deltaTime; // conta e lê o tempo em segundos
+            if (timer > 3f) // conta até 3
+            {
+                timer = 0f;
+                isIdle1 = !isIdle1; // Alterna o valor de isIdle1
+                animacao.SetBool("idle1", isIdle1);
+                animacao.SetBool("idle2", !isIdle1);
+            }
+        }
+    }
+
+    void Move() // movimentação horizontal e vertical do personagem 
+    { 
+        Vector3 movement = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, 0f); 
+        transform.position += movement * Time.deltaTime * speed; 
+
+        if(Input.GetAxisRaw("Horizontal") > 0f) 
+        { 
+            animacao.SetBool("walk", true); 
+            transform.eulerAngles = new Vector3(0f,0f,0f);
+        } 
+    
+        if(Input.GetAxisRaw("Horizontal") < 0f) 
+        { 
+            animacao.SetBool("walk", true); 
+            transform.eulerAngles = new Vector3(0f,180f,0f); 
+        } 
+    
+        if(Input.GetAxisRaw("Horizontal") == 0f) 
+        { 
+            animacao.SetBool("walk", false); 
+        } 
+    
+        if(!isJumping && GetComponent<Rigidbody2D>().velocity.magnitude > 0) 
+        { 
+            isMoving = true; 
+        } 
+        else 
+        { 
+            isMoving = false; 
+        } 
+    }
+
+    void Jump()
+    {
+        if(Input.GetButtonDown("Jump"))
+        {
+            if(!isJumping)
+            {
+                rig.AddForce(new Vector2(0f, JumpForce), ForceMode2D.Impulse);
+                animacao.SetBool("jump", true);
+            }
+        }
+    
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.layer == 8 )
+        {
+            isJumping = false;
+            animacao.SetBool("jump", false);
+        }
+
+        if(collision.gameObject.layer ==10 && !isMoving)
+        {
+            animacao.SetBool("sleep", true);
+        }
+
+         if(collision.gameObject.layer !=10)
+        {
+            animacao.SetBool("sleep", false);
+        }
+        
+    }
+
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        if(collision.gameObject.layer ==8)
+        {
+            isJumping = true;
+        }
+        
+    } 
+
+}
+
